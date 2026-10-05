@@ -1,12 +1,13 @@
-#include <unistd.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-int	sum(int x, int y) {
+int sum(int x, int y)
+{
 	return (x + y);
 }
 
-int	main(void)
+int main(void)
 {
 	int i;
 
