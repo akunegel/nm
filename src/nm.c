@@ -10,6 +10,16 @@
 // Majusucle quand global (STB_GLOBAL ou STB_WEAK) et minuscule pour local
 // (STB_LOCAL)
 
+static t_symbol *extract_32(Elf32_Ehdr *ehdr, size_t file_size, size_t *sym_count)
+{
+
+}
+
+static t_symbol *extract_64(Elf64_Ehdr *ehdr, size_t file_size, size_t *sym_count)
+{
+	
+}
+
 static int open_and_map_file(const char *filename, void **mapped_data, size_t *file_size)
 {
 	int fd;
@@ -17,8 +27,7 @@ static int open_and_map_file(const char *filename, void **mapped_data, size_t *f
 	fd = open(filename, O_RDONLY);
 	if (fd < 0)
 	{
-		perror("error");
-		printf("error: %s: No such file or directory\n", filename);
+		fprintf(stderr, "ft_nm: '%s': No such file\n", filename);
 		close(fd);
 		return -1;
 	}
@@ -52,10 +61,12 @@ static int open_and_map_file(const char *filename, void **mapped_data, size_t *f
 	return 0;
 }
 
-static void nm(const char *filename)
+static void ft_nm(const char *filename)
 {
-	void *mapped_data;
-	size_t file_size;
+	void		*mapped_data;
+	size_t		file_size;
+	t_symbol	*symbols;
+	size_t		sym_count;
 
 	if (open_and_map_file(filename, &mapped_data, &file_size) == -1)
 	{
@@ -78,6 +89,7 @@ static void nm(const char *filename)
 	}
 
 	unsigned char elf_class = ptr[EI_CLASS];
+	symbols = NULL;
 
 	if (elf_class == ELFCLASS32)
 	{
@@ -88,11 +100,8 @@ static void nm(const char *filename)
 			return;
 		}
 		Elf32_Ehdr *ehdr = (Elf32_Ehdr *)ptr;
-		// handle 32 bit binary
-		(void)ehdr; // Just to not trigger werror
-		printf("ELFCLASS64 branch took\n");
-	} else if (elf_class == ELFCLASS64)
-	{
+		symbols = extract_32(mapped_data, file_size, &sym_count);
+	} else if (elf_class == ELFCLASS64) {
 		if (file_size < sizeof(Elf64_Ehdr))
 		{
 			fprintf(stderr, "ft_nm: %s: file truncated\n", filename);
@@ -100,24 +109,21 @@ static void nm(const char *filename)
 			return;
 		}
 		Elf64_Ehdr *ehdr = (Elf64_Ehdr *)ptr;
-		// handle 64 bit binary
-		(void)ehdr; // Just to not trigger werror
-		printf("ELFCLASS64 branch took\n");
+		symbols = extract_64(mapped_data, file_size, &sym_count);
+	} else {
+		fprintf(stderr, "ft_nm: %s: invalid ELF class\n", filename);
+		munmap(mapped_data, file_size);
+		return;
 	}
 
-	// ouvrir fichier et recuperer taille
-	// map contenu en memoire
-	// verifier que le fichier commence bien par les "magic" bytes d'ELF et
-	// définir si executable 32-bit ou 64-bit trouver "Section Header Table"
-	// grace aux offsets trouver dans le header chercher section SHT_SYMTAB,
-	// fallback sur SHT_DYNSYMTAB (à verifier, pas certain que nm fasse ceci par
-	// defaut) trouver la "string table" associée (SHT_STRTAB) contenant les
-	// noms des symboles extraire et stocker les symboles trouvés, chaque entrée
-	// doit contenir: un offset dans la "string table" pour le nom, une valeure
-	// (l'addresse), une taille et l'index de section (st_shndx) identifier le
-	// symbole correspondant pour l'index de section (voir comm plus haut)
-	// afficher par ordre alphabétique
-	// unmap et libérer fd
+	if (symbols) {
+		//print_symbols(symbols);
+		free(symbols);
+		printf("Printing symbols here\n");
+	}
+
+	if (munmap(mapped_data, file_size) < 0)
+		perror("munmap error");
 }
 
 int main(int argc, char **argv)
@@ -125,14 +131,14 @@ int main(int argc, char **argv)
 	if (argc == 1)
 	{
 		const char *path = "a.out";
-		nm(path);
+		ft_nm(path);
 	}
 	else
 	{
 		for (int i = 1; i < argc; i++)
 		{
 			printf("%s:\n", argv[i]);
-			nm(argv[i]);
+			ft_nm(argv[i]);
 		}
 	}
 	return 0;
