@@ -89,6 +89,8 @@ static void nm(const char *filename)
 		}
 		Elf32_Ehdr *ehdr = (Elf32_Ehdr *)ptr;
 		// handle 32 bit binary
+		(void)ehdr; // Just to not trigger werror
+		printf("ELFCLASS64 branch took\n");
 	} else if (elf_class == ELFCLASS64)
 	{
 		if (file_size < sizeof(Elf64_Ehdr))
@@ -99,6 +101,8 @@ static void nm(const char *filename)
 		}
 		Elf64_Ehdr *ehdr = (Elf64_Ehdr *)ptr;
 		// handle 64 bit binary
+		(void)ehdr; // Just to not trigger werror
+		printf("ELFCLASS64 branch took\n");
 	}
 
 	// ouvrir fichier et recuperer taille
